@@ -1,9 +1,5 @@
-FROM postgres:latest
+FROM postgres:alpine
 
-ENV POSTGRES_USER myuser
-ENV POSTGRES_PASSWORD mypassword
-ENV POSTGRES_DB mydatabase
+COPY ./init.sql /docker-entrypoint-initdb.d/
 
-RUN apt-get update \
-    && apt-get install -y \
-    postgresql-contrib
+EXPOSE 5432
