@@ -34,6 +34,9 @@ jobs:
 
             export DOCKER_IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}
 
+            docker stop ${DOCKER_IMAGE_NAME}
+            docker rm ${DOCKER_IMAGE_NAME}
+
             docker build -t $DOCKER_IMAGE_NAME:latest .
 
             docker run --name $DOCKER_IMAGE_NAME \
