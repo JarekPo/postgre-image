@@ -34,6 +34,8 @@ jobs:
 
             export DOCKER_IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}
 
+            docker stop $(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
+
             docker build -t $DOCKER_IMAGE_NAME:latest .
 
             docker run --name $DOCKER_IMAGE_NAME \
