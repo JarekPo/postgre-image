@@ -22,6 +22,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.HOST_DNS }}
           REMOTE_USER: ${{ secrets.USERNAME }}
           TARGET: ${{ secrets.TARGET_DIR }}
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
@@ -31,25 +32,23 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
-            docker stop postgres-container || true
-            docker rm postgres-container || true
-            docker build -t postgre-image .
 
-            docker run --name postgres-container \
-              -e POSTGRES_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-              -e POSTGRES_DB=${{ secrets.DATABASE_NAME }} \
-              -e POSTGRES_USER=${{ secrets.DATABASE_USER }} \
-              -p 5432:5432 \
-              -d postgre-image
+            export DATABASE_NAME=${{ secrets.DATABASE_NAME }}
+            export DATABASE_USER=${{ secrets.DATABASE_USER }}
+            export DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            export DOCKER_IMAGE_NAME=${{ secrets.DOCKER_IMAGE_NAME }}
 
-            docker stop $(docker ps -q --filter "ancestor=${{ secrets.DOCKER_IMAGE_NAME }}") || true
-            docker rm $(docker ps -q --filter "ancestor=${{ secrets.DOCKER_IMAGE_NAME }}") || true
-
-            docker build --build-arg DATABASE_NAME=${{ secrets.DATABASE_NAME }} \
-              --build-arg DATABASE_USER=${{ secrets.DATABASE_USER }} \
-              --build-arg DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
-              --build-arg DATABASE_HOST=postgres-container \
-              --build-arg DATABASE_PORT=5432 \
-              -t ${{ secrets.DOCKER_IMAGE_NAME }}:latest .
+            docker build --build-arg DATABASE_NAME=${DATABASE_NAME} \
+              --build-arg DATABASE_USER=${DATABASE_USER } \
+              --build-arg DATABASE_PASSWORD=${DATABASE_PASSWORD} \
+              -t $DOCKER_IMAGE_NAME:latest .
 
             docker run -p 8000:80 -d ${{ secrets.DOCKER_IMAGE_NAME }}:latest
+
+
+            docker run --name postgres-container \
+              -e POSTGRES_PASSWORD=${DATABASE_PASSWORD} \
+              -e DATABASE_NAME=${DATABASE_NAME} \
+              -e POSTGRES_USER=${DATABASE_USER} \
+              -p 5432:5432 \
+              -d $DOCKER_IMAGE_NAME:latest
